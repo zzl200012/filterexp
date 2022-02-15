@@ -251,7 +251,7 @@ func genData(N int, sorted bool) []uint64 {
 }
 
 func TestDataGenerator(t *testing.T) {
-	sizes := []int{51200000/*160000, 500000, 1600000, 5000000, 10000000, 50000000, 100000000*/}
+	sizes := []int{100000/*160000, 500000, 1600000, 5000000, 10000000, 50000000, 100000000*/}
 	for _, size := range sizes {
 		data := genData(size, true)
 		filename := "/Users/asuka/filterexp/data/" + strconv.Itoa(size) + ".sorted"

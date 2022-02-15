@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-const NUM_KEYS = 100000000
+const NUM_KEYS = 1e6
 const MID_NUM_KEYS = 11500
 const SMALL_NUM_KEYS = 100
 
