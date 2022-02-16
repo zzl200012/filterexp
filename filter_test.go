@@ -5,7 +5,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"os"
-	"sort"
 	"strconv"
 	"sync"
 	"testing"
@@ -199,25 +198,52 @@ func setupMultiple(N int, numFilters int, sortedGlobal bool) {
 }
 
 func fetchData(N int, sorted bool) []uint64 {
-	if sorted {
-		filename := "/Users/asuka/filterexp/data/" + strconv.Itoa(N) + ".sorted"
-		f, _ := os.Open(filename)
-		stat, _ := f.Stat()
-		buf := make([]byte, stat.Size())
-		f.Read(buf)
-		var data []uint64
-		json.Unmarshal(buf, &data)
-		return data
-	} else {
-		filename := "/Users/asuka/filterexp/data/" + strconv.Itoa(N) + ".random"
-		f, _ := os.Open(filename)
-		stat, _ := f.Stat()
-		buf := make([]byte, stat.Size())
-		f.Read(buf)
-		var data []uint64
-		json.Unmarshal(buf, &data)
-		return data
-	}
+	return genData(N, sorted)
+	//if sorted {
+	//	k := 100000000
+	//	filename := "/Users/asuka/filterexp/data/" + strconv.Itoa(k) + ".sorted"
+	//	f, err := os.Open(filename)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	stat, _ := f.Stat()
+	//	buf := make([]byte, stat.Size())
+	//	if _, err = f.Read(buf); err != nil {
+	//		panic(err)
+	//	}
+	//	var data []uint64
+	//	if err = json.Unmarshal(buf, &data); err != nil {
+	//		panic(err)
+	//	}
+	//	for i := uint64(N - k); i < uint64(N); i++ {
+	//		data = append(data, i)
+	//	}
+	//	return data
+	//} else {
+	//	k := 100000000
+	//	filename := "/Users/asuka/filterexp/data/" + strconv.Itoa(k) + ".random"
+	//	f, err := os.Open(filename)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	stat, _ := f.Stat()
+	//	buf := make([]byte, stat.Size())
+	//	if _, err = f.Read(buf); err != nil {
+	//		panic(err)
+	//	}
+	//	var data []uint64
+	//	if err = json.Unmarshal(buf, &data); err != nil {
+	//		panic(err)
+	//	}
+	//	for i := uint64(N - k); i < uint64(N); i++ {
+	//		data = append(data, i)
+	//	}
+	//	for i := N - k; i < N; i++ {
+	//		idx := rand.Intn(k)
+	//		data[idx], data[i] = data[i], data[idx]
+	//	}
+	//	return data
+	//}
 }
 
 func TestFetchData(t *testing.T) {
@@ -228,30 +254,34 @@ func TestFetchData(t *testing.T) {
 }
 
 func genData(N int, sorted bool) []uint64 {
-	dedup := make(map[int]bool)
 	data := make([]uint64, 0, N)
-	for i := 0; i < N; i++ {
-		tmp := rand.Intn(N)
-		for {
-			if _, ok := dedup[tmp]; ok {
-				tmp = rand.Intn(N)
-				continue
-			}
-			dedup[tmp] = true
-			data = append(data, uint64(tmp))
-			break
-		}
+	for i := uint64(0); i < uint64(N); i++ {
+		data = append(data, i)
 	}
-	if sorted {
-		sort.Slice(data, func(i, j int) bool {
-			return data[i] < data[j]
+	if !sorted {
+		rand.Seed(time.Now().UnixNano())
+		rand.Shuffle(len(data), func(i, j int) {
+			data[i], data[j] = data[j], data[i]
 		})
 	}
+	log.Info(len(data))
 	return data
 }
 
+func TestRandom(t *testing.T) {
+	data := make([]int, 0)
+	for i := 0; i < 10; i++ {
+		data = append(data, i)
+	}
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(data), func(i, j int) {
+		data[i], data[j] = data[j], data[i]
+	})
+	log.Infof("%+v", data)
+}
+
 func TestDataGenerator(t *testing.T) {
-	sizes := []int{100000/*160000, 500000, 1600000, 5000000, 10000000, 50000000, 100000000*/}
+	sizes := []int{6400000 * 20/*160000, 500000, 1600000, 5000000, 10000000, 50000000, 100000000*/}
 	for _, size := range sizes {
 		data := genData(size, true)
 		filename := "/Users/asuka/filterexp/data/" + strconv.Itoa(size) + ".sorted"
