@@ -13,12 +13,17 @@
 
 #### Result
 
+最后一行总行数64000000，但 segment 数目增加至 20，结果和 128000000 行、20 个 segment 时差不多，主要作为对照组。 
+
 | Total Rows  | Segment Num | Block Num per Segment | Time (Sorted/Sorted) | Time (Sorted/Unsorted) | Time (Unsorted/Sorted) | Time (Unsorted/Unsorted) |
 | ----------- | ----------- | --------------------- | -------------------- | ---------------------- | ---------------------- | ------------------------ |
 | 64,000,000  | 10          | 40                    | 28 ns/op             | 118 ns/op              | 101 ns/op              | 360 ns/op                |
 | 128,000,000 | 20          | 40                    | 43 ns/op             | 160 ns/op              | 169 ns/op              | 619 ns/op                |
 | 192,000,000 | 30          | 40                    | 57 ns/op             | 185 ns/op              | 248 ns/op              | 906 ns/op                |
+| 64,000,000  | 20          | 40                    | 40 ns/op             | 153 ns/op              | 162 ns/op              | 592 ns/op                |
 
 1. 原数据、查询数据均无序时，耗时和 segment 数目呈线性关系，符合预期
 2. 原数据有序时，每个 key 只会命中一个 segment，因此耗时显著小于无序的情况
 3. 查询数据 layout 是否有序导致耗时差距的原因，暂时未知
+
+代码：https://github.com/zzl200012/filterexp/blob/main/final_test.go#L11
