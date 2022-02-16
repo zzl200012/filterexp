@@ -9,9 +9,9 @@ import (
 )
 
 func TestPKDeduplication(t *testing.T) {
-	rowsPerBlock := 160000
+	rowsPerBlock := 80000
 	blocksPerSeg := 40
-	numSegments := 30
+	numSegments := 20
 	rowsPerSeg := rowsPerBlock * blocksPerSeg
 	N := rowsPerSeg * numSegments
 	log.Info("Total: ", N, " rows")
