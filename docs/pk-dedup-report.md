@@ -27,3 +27,13 @@
 3. 查询数据 layout 是否有序导致耗时差距的原因，暂时未知
 
 代码：https://github.com/zzl200012/filterexp/blob/main/final_test.go#L11
+
+作为参考，尝试另一种方式，即每个 segment 建一个 filter + zonemap，结果如下：
+
+| Rows        | Segment Num | Time (Sorted/Sorted) | Time (Sorted/Unsorted) | Time (Unsorted/Sorted) | Time (Unsorted/Unsorted) |
+| ----------- | ----------- | -------------------- | ---------------------- | ---------------------- | ------------------------ |
+| 64,000,000  | 10          | 11 ns/op             | 49 ns/op               | 235 ns/op              | 233 ns/op                |
+| 128,000,000 | 20          | 18 ns/op             | 71 ns/op               | 431 ns/op              | 426 ns/op                |
+| 192,000,000 | 30          | 30 ns/op             | 97 ns/op               | 600 ns/op              | 612 ns/op                |
+| 64,000,000  | 20          | 15 ns/op             | 66 ns/op               | 388 ns/op              | 394 ns/op                |
+

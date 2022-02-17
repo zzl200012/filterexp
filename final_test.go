@@ -9,7 +9,7 @@ import (
 )
 
 func TestPKDeduplication(t *testing.T) {
-	rowsPerBlock := 80000
+	rowsPerBlock := 160000
 	blocksPerSeg := 40
 	numSegments := 20
 	rowsPerSeg := rowsPerBlock * blocksPerSeg
