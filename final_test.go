@@ -8,10 +8,13 @@ import (
 	"time"
 )
 
+var filterCount int
+var zmCount int
+
 func TestPKDeduplication(t *testing.T) {
 	rowsPerBlock := 160000
 	blocksPerSeg := 40
-	numSegments := 20
+	numSegments := 10
 	rowsPerSeg := rowsPerBlock * blocksPerSeg
 	N := rowsPerSeg * numSegments
 	log.Info("Total: ", N, " rows")
@@ -31,6 +34,8 @@ func TestPKDeduplication(t *testing.T) {
 	log.Info("env generated successfully | layout: sorted")
 
 	// query data is sorted
+	filterCount = 0
+	zmCount = 0
 	query := fetchData(N, true)
 	start := time.Now()
 	for i := 0; i < N; i++ {
@@ -41,9 +46,13 @@ func TestPKDeduplication(t *testing.T) {
 		}
 	}
 	end := time.Since(start)
+	log.Info("zm count: ", zmCount)
+	log.Info("filter count: ", filterCount)
 	log.Info("source sorted | query sorted | ", float64(end.Nanoseconds()) / float64(N), " ns/operation")
 
 	// query data is unsorted
+	filterCount = 0
+	zmCount = 0
 	query = fetchData(N, false)
 	start = time.Now()
 	for i := 0; i < N; i++ {
@@ -54,6 +63,8 @@ func TestPKDeduplication(t *testing.T) {
 		}
 	}
 	end = time.Since(start)
+	log.Info("zm count: ", zmCount)
+	log.Info("filter count: ", filterCount)
 	log.Info("source sorted | query unsorted | ", float64(end.Nanoseconds()) / float64(N), " ns/operation")
 
 	// source data is global unsorted
@@ -70,6 +81,8 @@ func TestPKDeduplication(t *testing.T) {
 	log.Info("env generated successfully | layout: unsorted")
 
 	// query data is sorted
+	filterCount = 0
+	zmCount = 0
 	query = fetchData(N, true)
 	start = time.Now()
 	for i := 0; i < N; i++ {
@@ -80,9 +93,13 @@ func TestPKDeduplication(t *testing.T) {
 		}
 	}
 	end = time.Since(start)
+	log.Info("zm count: ", zmCount)
+	log.Info("filter count: ", filterCount)
 	log.Info("source unsorted | query sorted | ", float64(end.Nanoseconds()) / float64(N), " ns/operation")
 
 	// query data is unsorted
+	filterCount = 0
+	zmCount = 0
 	query = fetchData(N, false)
 	start = time.Now()
 	for i := 0; i < N; i++ {
@@ -93,6 +110,28 @@ func TestPKDeduplication(t *testing.T) {
 		}
 	}
 	end = time.Since(start)
+	log.Info("zm count: ", zmCount)
+	log.Info("filter count: ", filterCount)
+	log.Info("source unsorted | query unsorted | ", float64(end.Nanoseconds()) / float64(N), " ns/operation")
+
+	// all query data does not exist
+	filterCount = 0
+	zmCount = 0
+	query = fetchData(N, false)
+	for i := 0; i < len(query); i++ {
+		query[i] += uint64(N)
+	}
+	start = time.Now()
+	for i := 0; i < N; i++ {
+		for k := 0; k < numSegments; k++ {
+			if segments[k].query(query[i]) {
+				break
+			}
+		}
+	}
+	end = time.Since(start)
+	log.Info("zm count: ", zmCount)
+	log.Info("filter count: ", filterCount)
 	log.Info("source unsorted | query unsorted | ", float64(end.Nanoseconds()) / float64(N), " ns/operation")
 }
 
@@ -138,6 +177,13 @@ func (seg *segment) query(key uint64) bool {
 	if key < seg.ZM.Min || key > seg.ZM.Max {
 		return false
 	}
+	//for _, part := range seg.blocks {
+	//	if part.ZM.Max < key || part.ZM.Min > key {
+	//		continue
+	//	}
+	//	return part.query(key)
+	//}
+
 	// binary search the zone map
 	beg, end := 0, len(seg.blocks) - 1
 	for beg <= end {
@@ -152,6 +198,7 @@ func (seg *segment) query(key uint64) bool {
 			continue
 		}
 		if key == blk.ZM.Min || key == blk.ZM.Max {
+			zmCount++
 			return true
 		}
 		return blk.query(key)
@@ -177,5 +224,6 @@ func getBlock(data []uint64) *block {
 }
 
 func (blk *block) query(key uint64) bool {
+	filterCount++
 	return blk.Filter.Contains(key)
 }
