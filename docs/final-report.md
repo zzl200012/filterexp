@@ -69,6 +69,10 @@
 
 ##### Filter per block
 
+将 N 个不重复的 uint64 类型数据分为若干个 segment，再把每个 segment 分为 40 个 block，为每个 block 生成一个 filter 和 zonemap，再分别用这 N 个数据查询，记录平均耗时。原始数据和查询数据 layout 可能为有序/无序。
+
+代码：https://github.com/zzl200012/filterexp/blob/main/final_test.go#L11
+
 | Total Rows  | Segment Num | Block Num per Segment | Time (Sorted/Sorted) | Time (Sorted/Unsorted) | Time (Unsorted/Sorted) | Time (Unsorted/Unsorted) |
 | ----------- | ----------- | --------------------- | -------------------- | ---------------------- | ---------------------- | ------------------------ |
 | 64,000,000  | 10          | 40                    | 28 ns/op             | 118 ns/op              | 101 ns/op              | 360 ns/op                |
