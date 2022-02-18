@@ -9,7 +9,7 @@
 
 ### Overview
 
-初步决定将 filter 作为排重的主要结构，相比 bloom filter、cuckoo filter 等传统 filter，发现 [FastFilter/xorfilter: Go library implementing binary fuse and xor filters](https://github.com/FastFilter/xorfilter) 对于静态数据拥有更高的性能和更小的空间占用，而我们的 filter 都与 segment/block 绑定，并不会更新，所以选择了它。在 filter 的基础上，想了两套方案：
+初步决定将 filter 作为排重的主要结构，相比 bloom filter、cuckoo filter 等传统 filter，发现 [FastFilter/xorfilter: Go library implementing binary fuse and xor filters](https://github.com/FastFilter/xorfilter) 对于静态数据拥有更高的性能和更小的空间占用，并且假阳率基本稳定在 0.4% 左右，而我们的 filter 都与 segment/block 绑定，并不会更新，所以选择了它。在 filter 的基础上，想了两套方案：
 
 1. 纯内存方案。每个 segment 生成一个 filter，同时带有一个 segment 级的 zonemap。排重时依次遍历各个 segment，如果 zonemap 命中则查询 filter，查到阳性再去读出实际数据。查完所有 segment 仍然没出现阳性，或者查到阳性的都发现是假阳，则返回不存在。filter 和 zonemap 均常驻内存。
 2. 磁盘方案。每个 segment 分为若干个 block，为每个 block 分别生成 filter 和 zonemap（或者树形索引）。排重时同样依次遍历 segment，在每个 segment 中通过二分搜索 zonemap 找到命中的区间，再搜索对应 block 的 filter，查到阳性再读入实际数据。如果所有区间都不命中或者查到假阳则进入下一个 segment，所有 segment 都没查到或者只查到假阳则返回不存在。与内存方案区别在于对一个大 filter 进行了分区，同时每个分区配备一个 zone map 加速定位，这样 filter 可以做到按需读入。
